@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"net/http"
+	"strings"
 )
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
@@ -36,8 +37,19 @@ func articlesStoreHandler(w http.ResponseWriter, r *http.Request) {
 
 func forceHTMLMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// 设置Header
 		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+		// 继续处理请求
 		h.ServeHTTP(w, r)
+	})
+}
+
+func removeTrailingSlash(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			r.URL.Path = strings.TrimSuffix(r.URL.Path, "/")
+		}
+		next.ServeHTTP(w, r)
 	})
 }
 
@@ -60,6 +72,6 @@ func main() {
 	articlesURL, _ := router.Get("articles.show").URL("id", "1")
 	fmt.Println("articlesURL: ", articlesURL)
 
-	http.ListenAndServe(":3000", router)
+	http.ListenAndServe(":3000", removeTrailingSlash(router))
 	return
 }
