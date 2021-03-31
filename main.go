@@ -40,7 +40,15 @@ func articlesIndexHandler(w http.ResponseWriter, r *http.Request) {
 
 // articlesStoreHandler 创建新的文章 API接口.
 func articlesStoreHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "创建新的文章")
+	//fmt.Fprint(w, "创建新的文章")
+	if err := r.ParseForm(); err != nil {
+		fmt.Fprint(w, "请提供正确的数据！")
+		return
+	}
+	//title := r.PostForm.Get("title")
+	fmt.Fprintf(w, "POST PostForm: %v <br>", r.PostForm)
+	fmt.Fprintf(w, "POST from: %v <br>", r.Form)
+	fmt.Fprintf(w, "title 的值为：%v", r.Form["test"])
 }
 
 // forceHTMLMiddleware 中间件,用于设置返回的Header中的ContentType.
@@ -72,7 +80,7 @@ func articlesCreateHandler(w http.ResponseWriter, r *http.Request) {
 		<title>创建文章 —— 我的技术博客</title>
 	</head>
 	<body>
-		<form action="%s" method="post">
+		<form action="%s?test=data" method="post">
 			<p><input type="text" name="title"></p>
 			<p><textarea name="body" cols="30" rows="10"></textarea></p>
 			<p><button type="submit">提交</button></p>
