@@ -35,11 +35,38 @@ func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "<h1>请求页面未找到 :(</h1><p>如有疑惑，请联系我们。</p>")
 }
 
+// Article 对应一条文章数据
+type Article struct {
+	Title, Body string
+	ID          int64
+}
+
 // articlesShowHandler 文章详情 API接口.
 func articlesShowHandler(w http.ResponseWriter, r *http.Request) {
+	// 1.获取 URL 参数
 	vars := mux.Vars(r)
 	id := vars["id"]
-	fmt.Fprint(w, "文章 ID："+id)
+
+	// 2.读取对应的文章数据
+	article := Article{}
+	query := "SELECT * FROM articles WHERE id = ?"
+	err := db.QueryRow(query, id).Scan(&article.ID, &article.Title, &article.Body)
+
+	// 3.如果出现错误
+	if err != nil {
+		if err == sql.ErrNoRows {
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(w, "文章未找到")
+		} else {
+			checkError(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, "500 服务器内部错误")
+		}
+	} else {
+		tmpl, err := template.ParseFiles("resources/views/articles/show.gohtml")
+		checkError(err)
+		tmpl.Execute(w, article)
+	}
 }
 
 // articlesIndexHandler 文章列表 API接口.
@@ -105,15 +132,16 @@ func articlesStoreHandler(w http.ResponseWriter, r *http.Request) {
 func saveArticleToDB(title string, body string) (int64, error) {
 	// 变量初始化
 	var (
-		id   int64
-		err  error
-		rs   sql.Result
-		stmt *sql.Stmt
+		id     int64
+		err    error
+		stmt   *sql.Stmt
+		result sql.Result
 	)
 
 	// 1.获取一个 Prepare 声明语句
-	stmt, err = db.Prepare("INSERT INTO articles (title, body) VALUES (?, ?)")
+	stmt, err = db.Prepare("INSERT INTO articles(title, body) VALUES (?, ?)")
 	if err != nil {
+		checkError(err)
 		return 0, err
 	}
 
@@ -121,14 +149,15 @@ func saveArticleToDB(title string, body string) (int64, error) {
 	defer stmt.Close()
 
 	// 3.执行请求，传参进入绑定的内容
-	rs, err = stmt.Exec(title, body)
+	result, err = stmt.Exec(title, body)
 	if err != nil {
+		checkError(err)
 		return 0, err
 	}
 
 	// 4.插入成功的话，会返回自增的ID
-	if id, err = rs.LastInsertId(); id > 0 {
-		return id, err
+	if id, err = result.LastInsertId(); id > 0 {
+		return id, nil
 	}
 	return 0, err
 }
