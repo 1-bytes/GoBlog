@@ -169,8 +169,21 @@ func checkError(err error) {
 	}
 }
 
+// createTables 创建数据库表.
+func createTables() {
+	createArticlesSQL := `CREATE TABLE IF NOT EXISTS articles(
+    id bigint(20) PRIMARY KEY AUTO_INCREMENT NOT NULL,
+    title varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+    body longtext COLLATE utf8mb4_unicode_ci
+); `
+
+	_, err := db.Exec(createArticlesSQL)
+	checkError(err)
+}
+
 func main() {
 	initDB()
+	createTables()
 	router.HandleFunc("/", homeHandler).Name("home")
 	router.HandleFunc("/about", aboutHandler).Name("about")
 	router.HandleFunc("/articles/{id:[0-9]+}", articlesShowHandler).Methods("GET").Name("articles.show")
