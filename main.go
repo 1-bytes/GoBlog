@@ -41,7 +41,7 @@ type Article struct {
 	ID          int64
 }
 
-// articlesShowHandler 文章详情 API接口.
+// articlesShowHandler 文章详情.
 func articlesShowHandler(w http.ResponseWriter, r *http.Request) {
 	// 1.获取 URL 参数
 	vars := mux.Vars(r)
@@ -54,6 +54,7 @@ func articlesShowHandler(w http.ResponseWriter, r *http.Request) {
 
 	// 3.如果出现错误
 	if err != nil {
+		// 判断是没找到数据 还是查询报错了
 		if err == sql.ErrNoRows {
 			w.WriteHeader(http.StatusNotFound)
 			fmt.Fprint(w, "文章未找到")
@@ -63,6 +64,7 @@ func articlesShowHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprint(w, "500 服务器内部错误")
 		}
 	} else {
+		// 4.读取数据成功
 		tmpl, err := template.ParseFiles("resources/views/articles/show.gohtml")
 		checkError(err)
 		tmpl.Execute(w, article)
