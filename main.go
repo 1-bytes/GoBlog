@@ -36,10 +36,20 @@ func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "<h1>请求页面未找到 :(</h1><p>如有疑惑，请联系我们。</p>")
 }
 
-// Article 对应一条文章数据
+// Article 对应一条文章数据.
 type Article struct {
 	Title, Body string
 	ID          int64
+}
+
+// Link 方法用来生成文章链接.
+func (a Article) Link() string {
+	showURL, err := router.Get("articles.show").URL("id", strconv.FormatInt(a.ID, 10))
+	if err != nil {
+		checkError(err)
+		return ""
+	}
+	return showURL.String()
 }
 
 // articlesShowHandler 文章详情.
@@ -180,9 +190,34 @@ func articlesUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// articlesIndexHandler 文章列表 API接口.
+// articlesIndexHandler 文章列表页面.
 func articlesIndexHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "访问文章列表")
+	// 1.执行查询语句，返回一个结果集
+	rows, err := db.Query("SELECT * FROM articles")
+	checkError(err)
+	defer rows.Close()
+
+	// 2.循环读取结果
+	var articles []Article
+	for rows.Next() {
+		var article Article
+		// 2.1扫描每一行的结果并赋值到一个 article 对象中
+		err := rows.Scan(&article.ID, &article.Title, &article.Body)
+		checkError(err)
+		// 2.2将 article 追加到 articles 这个切片当中
+		articles = append(articles, article)
+	}
+
+	// 2.3检测遍历时是否发生错误
+	err = rows.Err()
+	checkError(err)
+
+	// 3.加载模板
+	tmpl, err := template.ParseFiles("resources/views/articles/index.gohtml")
+	checkError(err)
+
+	// 4.渲染模板，将所有文章的数据传输进去
+	tmpl.Execute(w, articles)
 }
 
 // AtriclesFormData 创建博文表单数据
