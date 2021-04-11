@@ -3,6 +3,7 @@ package main
 import (
 	"GoBlog/pkg/logger"
 	"GoBlog/pkg/route"
+	"GoBlog/pkg/types"
 	"database/sql"
 	"fmt"
 	"github.com/go-sql-driver/mysql"
@@ -41,11 +42,6 @@ func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 type Article struct {
 	Title, Body string
 	ID          int64
-}
-
-// Int64ToString 将 int64 转换为 string
-func Int64ToString(num int64) string {
-	return strconv.FormatInt(num, 10)
 }
 
 // Delete 方法用于从数据库中删除单条记录
@@ -94,7 +90,7 @@ func articlesShowHandler(w http.ResponseWriter, r *http.Request) {
 		// 4.读取数据成功，显示表单
 		tmpl, err := template.New("show.gohtml").Funcs(template.FuncMap{
 			"RouteName2URL": route.Name2URL,
-			"Int64ToString": Int64ToString,
+			"Int64ToString": types.Int64ToString,
 		}).ParseFiles("resources/views/articles/show.gohtml")
 		logger.LogError(err)
 		tmpl.Execute(w, article)
@@ -448,6 +444,7 @@ func createTables() {
 	logger.LogError(err)
 }
 
+// main ...
 func main() {
 	initDB()
 	createTables()
