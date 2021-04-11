@@ -1,6 +1,7 @@
 package main
 
 import (
+	"GoBlog/pkg/route"
 	"database/sql"
 	"fmt"
 	"github.com/go-sql-driver/mysql"
@@ -16,7 +17,7 @@ import (
 	"unicode/utf8"
 )
 
-var router = mux.NewRouter()
+var router *mux.Router
 var db *sql.DB
 
 // homeHandler 首页.
@@ -40,16 +41,6 @@ func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 type Article struct {
 	Title, Body string
 	ID          int64
-}
-
-// RouteName2URL 通过路由名称来获取URL.
-func RouteName2URL(routeName string, pairs ...string) string {
-	url, err := router.Get(routeName).URL(pairs...)
-	if err != nil {
-		checkError(err)
-		return ""
-	}
-	return url.String()
 }
 
 // Int64ToString 将 int64 转换为 string
@@ -102,7 +93,7 @@ func articlesShowHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		// 4.读取数据成功，显示表单
 		tmpl, err := template.New("show.gohtml").Funcs(template.FuncMap{
-			"RouteName2URL": RouteName2URL,
+			"RouteName2URL": route.Name2URL,
 			"Int64ToString": Int64ToString,
 		}).ParseFiles("resources/views/articles/show.gohtml")
 		checkError(err)
@@ -473,6 +464,9 @@ func createTables() {
 func main() {
 	initDB()
 	createTables()
+	route.Initialize()
+	router = route.Router
+
 	router.HandleFunc("/", homeHandler).Name("home")
 	router.HandleFunc("/about", aboutHandler).Name("about")
 	router.HandleFunc("/articles/{id:[0-9]+}", articlesShowHandler).Methods("GET").Name("articles.show")
