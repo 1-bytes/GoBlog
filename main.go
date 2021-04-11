@@ -74,7 +74,7 @@ func (a Article) Link() string {
 // articlesShowHandler 文章详情.
 func articlesShowHandler(w http.ResponseWriter, r *http.Request) {
 	// 1.获取 URL 参数
-	id := getRouterVariable("id", r)
+	id := route.GetRouteVariable("id", r)
 
 	// 2.读取对应的文章数据
 	article, err := getArticleById(id)
@@ -101,12 +101,6 @@ func articlesShowHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// getRouterVariable 通过获取URL路由参数名称获取值.
-func getRouterVariable(parameterName string, r *http.Request) string {
-	vars := mux.Vars(r)
-	return vars[parameterName]
-}
-
 // getArticleById 通过传参ID获取博文.
 func getArticleById(id string) (Article, error) {
 	article := Article{}
@@ -118,7 +112,7 @@ func getArticleById(id string) (Article, error) {
 // articlesEditHandler 更新文章页面
 func articlesEditHandler(w http.ResponseWriter, r *http.Request) {
 	// 1.获取 URL 参数
-	id := getRouterVariable("id", r)
+	id := route.GetRouteVariable("id", r)
 
 	// 2.读取对应的文章数据
 	article, err := getArticleById(id)
@@ -155,7 +149,7 @@ func articlesEditHandler(w http.ResponseWriter, r *http.Request) {
 // articlesUpdateHandler 更新文章接口
 func articlesUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	// 1.获取URL参数
-	id := getRouterVariable("id", r)
+	id := route.GetRouteVariable("id", r)
 
 	// 2.读取对应的文章数据
 	_, err := getArticleById(id)
@@ -215,7 +209,7 @@ func articlesUpdateHandler(w http.ResponseWriter, r *http.Request) {
 // articlesDeleteHandler 删除文章
 func articlesDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	// 1. 获取 URL 参数
-	id := getRouterVariable("id", r)
+	id := route.GetRouteVariable("id", r)
 	// 2. 读取对应的文章数据
 	article, err := getArticleById(id)
 	// 3. 如果出现错误
