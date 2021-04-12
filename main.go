@@ -1,10 +1,9 @@
 package main
 
 import (
+	"GoBlog/bootstrap"
 	"GoBlog/pkg/database"
 	"GoBlog/pkg/logger"
-	"GoBlog/pkg/route"
-	"GoBlog/pkg/types"
 	"database/sql"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
@@ -49,36 +48,6 @@ func (a Article) Link() string {
 	return showURL.String()
 }
 
-// articlesShowHandler 文章详情.
-func articlesShowHandler(w http.ResponseWriter, r *http.Request) {
-	// 1.获取 URL 参数
-	id := route.GetRouteVariable("id", r)
-
-	// 2.读取对应的文章数据
-	article, err := getArticleById(id)
-
-	// 3.如果出现错误
-	if err != nil {
-		// 判断是没找到数据 还是查询报错了
-		if err == sql.ErrNoRows {
-			w.WriteHeader(http.StatusNotFound)
-			fmt.Fprint(w, "文章未找到")
-		} else {
-			logger.LogError(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprint(w, "500 服务器内部错误")
-		}
-	} else {
-		// 4.读取数据成功，显示表单
-		tmpl, err := template.New("show.gohtml").Funcs(template.FuncMap{
-			"RouteName2URL": route.Name2URL,
-			"Int64ToString": types.Int64ToString,
-		}).ParseFiles("resources/views/articles/show.gohtml")
-		logger.LogError(err)
-		tmpl.Execute(w, article)
-	}
-}
-
 // getArticleById 通过传参ID获取博文.
 func getArticleById(id string) (Article, error) {
 	article := Article{}
@@ -90,7 +59,7 @@ func getArticleById(id string) (Article, error) {
 // articlesEditHandler 更新文章页面
 func articlesEditHandler(w http.ResponseWriter, r *http.Request) {
 	// 1.获取 URL 参数
-	id := route.GetRouteVariable("id", r)
+	id := getRouteVariable("id", r)
 
 	// 2.读取对应的文章数据
 	article, err := getArticleById(id)
@@ -127,7 +96,7 @@ func articlesEditHandler(w http.ResponseWriter, r *http.Request) {
 // articlesUpdateHandler 更新文章接口
 func articlesUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	// 1.获取URL参数
-	id := route.GetRouteVariable("id", r)
+	id := getRouteVariable("id", r)
 
 	// 2.读取对应的文章数据
 	_, err := getArticleById(id)
@@ -187,7 +156,7 @@ func articlesUpdateHandler(w http.ResponseWriter, r *http.Request) {
 // articlesDeleteHandler 删除文章
 func articlesDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	// 1. 获取 URL 参数
-	id := route.GetRouteVariable("id", r)
+	id := getRouteVariable("id", r)
 	// 2. 读取对应的文章数据
 	article, err := getArticleById(id)
 	// 3. 如果出现错误
@@ -385,15 +354,20 @@ func articlesCreateHandler(w http.ResponseWriter, r *http.Request) {
 	tmpl.Execute(w, data)
 }
 
+// GetRouteVariable 通过获取URL路由参数名称获取值.
+func getRouteVariable(parameterName string, r *http.Request) string {
+	vars := mux.Vars(r)
+	return vars[parameterName]
+}
+
 // main ...
 func main() {
 	database.Initialize()
 	db = database.DB
 
-	route.Initialize()
-	router = route.Router
+	router = bootstrap.SetupRoute()
 
-	router.HandleFunc("/articles/{id:[0-9]+}", articlesShowHandler).Methods("GET").Name("articles.show")
+	//router.HandleFunc("/articles/{id:[0-9]+}", articlesShowHandler).Methods("GET").Name("articles.show")
 	router.HandleFunc("/articles", articlesIndexHandler).Methods("GET").Name("articles.index")
 	router.HandleFunc("/articles", articlesStoreHandler).Methods("POST").Name("articles.store")
 	router.HandleFunc("/articles/create", articlesCreateHandler).Methods("GET").Name("articles.create")
