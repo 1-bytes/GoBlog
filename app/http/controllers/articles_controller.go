@@ -1,11 +1,12 @@
 package controllers
 
 import (
+	"GoBlog/app/models/article"
 	"GoBlog/pkg/logger"
 	"GoBlog/pkg/route"
 	"GoBlog/pkg/types"
-	"database/sql"
 	"fmt"
+	"gorm.io/gorm"
 	"html/template"
 	"net/http"
 )
@@ -20,14 +21,14 @@ func (*ArticlesController) Show(w http.ResponseWriter, r *http.Request) {
 	id := route.GetRouteVariable("id", r)
 
 	// 2.读取对应的文章数据
-	article, err := getArticleById(id)
+	article, err := article.Get(id)
 
 	// 3.如果出现错误
 	if err != nil {
 		// 判断是没找到数据 还是查询报错了
-		if err == sql.ErrNoRows {
+		if err == gorm.ErrRecordNotFound {
 			w.WriteHeader(http.StatusNotFound)
-			fmt.Fprint(w, "文章未找到")
+			fmt.Fprint(w, "404 文章未找到")
 		} else {
 			logger.LogError(err)
 			w.WriteHeader(http.StatusInternalServerError)
