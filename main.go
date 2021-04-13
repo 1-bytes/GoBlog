@@ -38,16 +38,6 @@ func (a Article) Delete() (rowsAffected int64, err error) {
 	return 0, nil
 }
 
-// Link 方法用来生成文章链接.
-func (a Article) Link() string {
-	showURL, err := router.Get("articles.show").URL("id", strconv.FormatInt(a.ID, 10))
-	if err != nil {
-		logger.LogError(err)
-		return ""
-	}
-	return showURL.String()
-}
-
 // getArticleById 通过传参ID获取博文.
 func getArticleById(id string) (Article, error) {
 	article := Article{}
@@ -195,36 +185,6 @@ func articlesDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// articlesIndexHandler 文章列表.
-func articlesIndexHandler(w http.ResponseWriter, r *http.Request) {
-	// 1.执行查询语句，返回一个结果集
-	rows, err := db.Query("SELECT * FROM articles")
-	logger.LogError(err)
-	defer rows.Close()
-
-	// 2.循环读取结果
-	var articles []Article
-	for rows.Next() {
-		var article Article
-		// 2.1扫描每一行的结果并赋值到一个 article 对象中
-		err := rows.Scan(&article.ID, &article.Title, &article.Body)
-		logger.LogError(err)
-		// 2.2将 article 追加到 articles 这个切片当中
-		articles = append(articles, article)
-	}
-
-	// 2.3检测遍历时是否发生错误
-	err = rows.Err()
-	logger.LogError(err)
-
-	// 3.加载模板
-	tmpl, err := template.ParseFiles("resources/views/articles/index.gohtml")
-	logger.LogError(err)
-
-	// 4.渲染模板，将所有文章的数据传输进去
-	tmpl.Execute(w, articles)
-}
-
 // AtriclesFormData 创建博文表单数据
 type ArticlesFormData struct {
 	Title, Body string
@@ -368,8 +328,6 @@ func main() {
 	bootstrap.SetupDB()
 	router = bootstrap.SetupRoute()
 
-	//router.HandleFunc("/articles/{id:[0-9]+}", articlesShowHandler).Methods("GET").Name("articles.show")
-	router.HandleFunc("/articles", articlesIndexHandler).Methods("GET").Name("articles.index")
 	router.HandleFunc("/articles", articlesStoreHandler).Methods("POST").Name("articles.store")
 	router.HandleFunc("/articles/create", articlesCreateHandler).Methods("GET").Name("articles.create")
 	router.HandleFunc("/articles/{id:[0-9]+}/edit", articlesEditHandler).Methods("GET").Name("articles.edit")
