@@ -33,3 +33,13 @@ func (article *Article) Create() error {
 	}
 	return nil
 }
+
+// Update 更新文章，如果文章不存在则自动创建
+func (article *Article) Update() (int64, error) {
+	result := model.DB.Save(&article)
+	if err := model.DB.Error; err != nil {
+		logger.LogError(err)
+		return 0, err
+	}
+	return result.RowsAffected, nil
+}

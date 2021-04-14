@@ -8,11 +8,8 @@ import (
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
-	"html/template"
 	"net/http"
-	"net/url"
 	"strings"
-	"unicode/utf8"
 )
 
 var router *mux.Router
@@ -43,103 +40,6 @@ func getArticleById(id string) (Article, error) {
 	query := "SELECT * FROM articles WHERE id = ?"
 	err := db.QueryRow(query, id).Scan(&article.ID, &article.Title, &article.Body)
 	return article, err
-}
-
-// articlesEditHandler 更新文章页面
-func articlesEditHandler(w http.ResponseWriter, r *http.Request) {
-	// 1.获取 URL 参数
-	id := getRouteVariable("id", r)
-
-	// 2.读取对应的文章数据
-	article, err := getArticleById(id)
-
-	// 3.如果出现错误
-	if err != nil {
-		if err == sql.ErrNoRows {
-			// 3.1 数据未找到
-			w.WriteHeader(http.StatusNotFound)
-			fmt.Fprint(w, "文章未找到")
-		} else {
-			// 3.2 数据库错误
-			logger.LogError(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprint(w, "500 服务器内部错误")
-		}
-	} else {
-		// 读取成功，显示表单
-		updateURL, err := router.Get("articles.update").URL("id", id)
-		data := ArticlesFormData{
-			Title:  article.Title,
-			Body:   article.Body,
-			URL:    updateURL,
-			Errors: nil,
-		}
-
-		teml, err := template.ParseFiles("resources/views/articles/edit.gohtml")
-		logger.LogError(err)
-
-		teml.Execute(w, data)
-	}
-}
-
-// articlesUpdateHandler 更新文章接口
-func articlesUpdateHandler(w http.ResponseWriter, r *http.Request) {
-	// 1.获取URL参数
-	id := getRouteVariable("id", r)
-
-	// 2.读取对应的文章数据
-	_, err := getArticleById(id)
-
-	// 3.如果出现错误
-	if err != nil {
-		if err == sql.ErrNoRows {
-			w.WriteHeader(http.StatusNotFound)
-			fmt.Fprint(w, "404 文章未找到")
-		} else {
-			logger.LogError(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprint(w, "500 服务器内部错误")
-		}
-	} else {
-		// 4.未出现错误，进行表单验证
-		title := r.PostFormValue("title")
-		body := r.PostFormValue("body")
-
-		errors := validateArticleFormData(title, body)
-
-		if len(errors) == 0 {
-			// 表单验证通过，更新数据
-			query := "UPDATE articles SET title = ?, body = ? WHERE id = ?"
-			rs, err := db.Exec(query, title, body, id)
-
-			if err != nil {
-				logger.LogError(err)
-				w.WriteHeader(http.StatusInternalServerError)
-				fmt.Fprint(w, "500 服务器内部错误")
-			}
-
-			// 更新成功，跳转到文章详情页
-			if n, _ := rs.RowsAffected(); n > 0 {
-				showUrl, _ := router.Get("articles.show").URL("id", id)
-				http.Redirect(w, r, showUrl.String(), http.StatusFound)
-			} else {
-				fmt.Fprint(w, "您没有做任何更改！")
-			}
-		} else {
-			// 4.3表单验证不通过，验证路由
-			updateURL, _ := router.Get("articles.update").URL("id", id)
-			data := ArticlesFormData{
-				Title:  title,
-				Body:   body,
-				URL:    updateURL,
-				Errors: errors,
-			}
-			tmpl, err := template.ParseFiles("resources/views/articles/edit.gohtml")
-			logger.LogError(err)
-			tmpl.Execute(w, data)
-		}
-
-	}
 }
 
 // articlesDeleteHandler 删除文章
@@ -184,66 +84,6 @@ func articlesDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// AtriclesFormData 创建博文表单数据
-type ArticlesFormData struct {
-	Title, Body string
-	URL         *url.URL
-	Errors      map[string]string
-}
-
-func validateArticleFormData(title string, body string) map[string]string {
-	errors := make(map[string]string)
-
-	// 验证标题
-	if title == "" {
-		errors["title"] = "标题不能为空"
-	} else if utf8.RuneCountInString(title) < 3 || utf8.RuneCountInString("title") > 40 {
-		errors["title"] = "标题长度需介于 3-40"
-	}
-
-	// 验证内容
-	if body == "" {
-		errors["body"] = "内容不能为空"
-	} else if utf8.RuneCountInString(body) < 10 {
-		errors["body"] = "内容长度不能大于或等于10个字节"
-	}
-	return errors
-}
-
-// saveArticleToDB 向数据库中保存一篇文章，如果插入成功则返回一个主键ID.
-func saveArticleToDB(title string, body string) (int64, error) {
-	// 变量初始化
-	var (
-		id     int64
-		err    error
-		stmt   *sql.Stmt
-		result sql.Result
-	)
-
-	// 1.获取一个 Prepare 声明语句
-	stmt, err = db.Prepare("INSERT INTO articles(title, body) VALUES (?, ?)")
-	if err != nil {
-		logger.LogError(err)
-		return 0, err
-	}
-
-	// 2.在此函数运行结束后关闭此语句，防止占用SQL连接
-	defer stmt.Close()
-
-	// 3.执行请求，传参进入绑定的内容
-	result, err = stmt.Exec(title, body)
-	if err != nil {
-		logger.LogError(err)
-		return 0, err
-	}
-
-	// 4.插入成功的话，会返回自增的ID
-	if id, err = result.LastInsertId(); id > 0 {
-		return id, nil
-	}
-	return 0, err
-}
-
 // forceHTMLMiddleware 中间件,用于设置返回的Header中的ContentType.
 func forceHTMLMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -278,8 +118,6 @@ func main() {
 	bootstrap.SetupDB()
 	router = bootstrap.SetupRoute()
 
-	router.HandleFunc("/articles/{id:[0-9]+}/edit", articlesEditHandler).Methods("GET").Name("articles.edit")
-	router.HandleFunc("/articles/{id:[0-9]+}", articlesUpdateHandler).Methods("POST").Name("articles.update")
 	router.HandleFunc("/articles/{id:[0-9]+}/delete", articlesDeleteHandler).Methods("POST").Name("articles.delete")
 
 	// 中间件：强制内容为 HTML
