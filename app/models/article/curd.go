@@ -35,9 +35,19 @@ func (article *Article) Create() error {
 }
 
 // Update 更新文章，如果文章不存在则自动创建
-func (article *Article) Update() (int64, error) {
+func (article *Article) Update() (rowsAffected int64, err error) {
 	result := model.DB.Save(&article)
-	if err := model.DB.Error; err != nil {
+	if err = model.DB.Error; err != nil {
+		logger.LogError(err)
+		return 0, err
+	}
+	return result.RowsAffected, nil
+}
+
+// Delete 方法用于从数据库中删除单条记录
+func (article *Article) Delete() (rowsAffected int64, err error) {
+	result := model.DB.Delete(&article)
+	if err = result.Error; err != nil {
 		logger.LogError(err)
 		return 0, err
 	}
