@@ -9,8 +9,21 @@ import (
 	"strings"
 )
 
-// Render 渲染视图
-func Render(w io.Writer, data interface{}, tplFiles ...string) error {
+// D 是 map[string]interface{} 的简写
+type D map[string]interface{}
+
+// Render 渲染通用视图
+func Render(w io.Writer, data interface{}, tplFiles ...string) {
+	RenderTemplate(w, "app", data, tplFiles...)
+}
+
+// RenderSimple 渲染简单视图
+func RenderSimple(w io.Writer, data interface{}, tplFiles ...string) {
+	RenderTemplate(w, "simple", data, tplFiles...)
+}
+
+// RenderTemplate 渲染视图
+func RenderTemplate(w io.Writer, name string, data interface{}, tplFiles ...string) {
 	// 1. 设置模板相对路径
 	viewDir := "resources/views/"
 
@@ -34,5 +47,5 @@ func Render(w io.Writer, data interface{}, tplFiles ...string) error {
 	logger.LogError(err)
 
 	// 6. 渲染模板
-	return tmp1.ExecuteTemplate(w, "app", data)
+	tmp1.ExecuteTemplate(w, name, data)
 }

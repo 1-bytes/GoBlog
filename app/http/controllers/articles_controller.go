@@ -5,6 +5,7 @@ import (
 	"GoBlog/pkg/logger"
 	"GoBlog/pkg/route"
 	"GoBlog/pkg/view"
+	"errors"
 	"fmt"
 	"gorm.io/gorm"
 	"net/http"
@@ -13,13 +14,6 @@ import (
 
 // ArticlesController 文章相关页面
 type ArticlesController struct {
-}
-
-// ArticlesFormData 创建文章表单数据
-type ArticlesFormData struct {
-	Title, Body string
-	Article     article.Article
-	Errors      map[string]string
 }
 
 // Show 文章详情
@@ -33,7 +27,7 @@ func (*ArticlesController) Show(w http.ResponseWriter, r *http.Request) {
 	// 3.如果出现错误
 	if err != nil {
 		// 判断是没找到数据 还是查询报错了
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			w.WriteHeader(http.StatusNotFound)
 			fmt.Fprint(w, "404 文章未找到")
 		} else {
@@ -48,7 +42,7 @@ func (*ArticlesController) Show(w http.ResponseWriter, r *http.Request) {
 }
 
 // Index 文章列表页
-func (*ArticlesController) Index(w http.ResponseWriter, r *http.Request) {
+func (*ArticlesController) Index(w http.ResponseWriter, _ *http.Request) {
 	// 1. 获取结果集
 	articles, err := article.GetAll()
 
@@ -64,22 +58,22 @@ func (*ArticlesController) Index(w http.ResponseWriter, r *http.Request) {
 
 // validateArticleFormData 文章表单验证
 func validateArticleFormData(title string, body string) map[string]string {
-	errors := make(map[string]string)
+	errs := make(map[string]string)
 
 	// 验证标题
 	if title == "" {
-		errors["title"] = "标题不能为空"
+		errs["title"] = "标题不能为空"
 	} else if utf8.RuneCountInString(title) < 3 || utf8.RuneCountInString("title") > 40 {
-		errors["title"] = "标题长度需介于 3-40"
+		errs["title"] = "标题长度需介于 3-40"
 	}
 
 	// 验证内容
 	if body == "" {
-		errors["body"] = "内容不能为空"
+		errs["body"] = "内容不能为空"
 	} else if utf8.RuneCountInString(body) < 10 {
-		errors["body"] = "内容长度不能大于或等于10个字节"
+		errs["body"] = "内容长度不能大于或等于10个字节"
 	}
-	return errors
+	return errs
 }
 
 // Store 创建文章页面
@@ -87,15 +81,15 @@ func (*ArticlesController) Store(w http.ResponseWriter, r *http.Request) {
 	title := r.FormValue("title")
 	body := r.PostFormValue("body")
 
-	errors := validateArticleFormData(title, body)
+	errs := validateArticleFormData(title, body)
 
 	// 检查是否有错误
-	if len(errors) == 0 {
+	if len(errs) == 0 {
 		_article := article.Article{
 			Title: title,
 			Body:  body,
 		}
-		_article.Create()
+		_article.Create() //nolint:errcheck
 
 		if _article.ID > 0 {
 			fmt.Fprint(w, "插入成功，ID为"+_article.GetStringID())
@@ -104,17 +98,17 @@ func (*ArticlesController) Store(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprint(w, "创建文章失败，请联系管理员")
 		}
 	} else {
-		view.Render(w, ArticlesFormData{
-			Title:  title,
-			Body:   body,
-			Errors: errors,
+		view.Render(w, view.D{
+			"Title":  title,
+			"Body":   body,
+			"Errors": errs,
 		}, "articles.create", "articles._form_field")
 	}
 }
 
 // Create 创建文章页面
-func (*ArticlesController) Create(w http.ResponseWriter, r *http.Request) {
-	view.Render(w, ArticlesFormData{}, "articles.create", "articles._form_field")
+func (*ArticlesController) Create(w http.ResponseWriter, _ *http.Request) {
+	view.Render(w, view.D{}, "articles.create", "articles._form_field")
 }
 
 // Edit 更新文章页面
@@ -127,7 +121,7 @@ func (*ArticlesController) Edit(w http.ResponseWriter, r *http.Request) {
 
 	// 3.如果出现错误
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			// 3.1 数据未找到
 			w.WriteHeader(http.StatusNotFound)
 			fmt.Fprint(w, "文章未找到")
@@ -139,11 +133,10 @@ func (*ArticlesController) Edit(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		// 读取成功，显示表单
-		view.Render(w, ArticlesFormData{
-			Title:   _article.Title,
-			Body:    _article.Body,
-			Article: _article,
-			Errors:  nil,
+		view.Render(w, view.D{
+			"Title":   _article.Title,
+			"Body":    _article.Body,
+			"Article": _article,
 		}, "articles.edit", "articles._form_field")
 	}
 }
@@ -158,7 +151,7 @@ func (*ArticlesController) Update(w http.ResponseWriter, r *http.Request) {
 
 	// 3.如果出现错误
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			w.WriteHeader(http.StatusNotFound)
 			fmt.Fprint(w, "404 文章未找到")
 		} else {
@@ -171,9 +164,9 @@ func (*ArticlesController) Update(w http.ResponseWriter, r *http.Request) {
 		title := r.PostFormValue("title")
 		body := r.PostFormValue("body")
 
-		errors := validateArticleFormData(title, body)
+		errs := validateArticleFormData(title, body)
 
-		if len(errors) == 0 {
+		if len(errs) == 0 {
 			// 表单验证通过，更新数据
 			_article.Title = title
 			_article.Body = body
@@ -188,18 +181,18 @@ func (*ArticlesController) Update(w http.ResponseWriter, r *http.Request) {
 
 			// 更新成功，跳转到文章详情页
 			if rowsAffected > 0 {
-				showUrl := route.Name2URL("articles.show", "id", id)
-				http.Redirect(w, r, showUrl, http.StatusFound)
+				showURL := route.Name2URL("articles.show", "id", id)
+				http.Redirect(w, r, showURL, http.StatusFound)
 			} else {
 				fmt.Fprint(w, "您没有做任何更改！")
 			}
 		} else {
 			// 4.3表单验证不通过，验证路由
-			view.Render(w, ArticlesFormData{
-				Title:   title,
-				Body:    body,
-				Article: _article,
-				Errors:  errors,
+			view.Render(w, view.D{
+				"Title":   title,
+				"Body":    body,
+				"Article": _article,
+				"Errors":  errs,
 			}, "articles.edit", "articles._form_field")
 		}
 	}
@@ -213,7 +206,7 @@ func (*ArticlesController) Delete(w http.ResponseWriter, r *http.Request) {
 	_article, err := article.Get(id)
 	// 3. 如果出现错误
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			// 3.1 数据未找到
 			w.WriteHeader(http.StatusNotFound)
 			fmt.Fprintf(w, "404 文章未找到")
