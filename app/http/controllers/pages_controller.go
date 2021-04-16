@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"GoBlog/pkg/view"
 	"fmt"
 	"net/http"
 )
@@ -8,10 +9,17 @@ import (
 // PagesController 处理静态页面
 type PagesController struct{}
 
+// AboutFormData 关于页面表单数据
+type AboutFormData struct {
+	Title, Body string
+}
+
 // About 关于
 func (*PagesController) About(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "此博客是用以记录编程笔记，如您有反馈或建议，请联系 "+
-		"<a href=\"mailto:abc@example.com\">abc@example.com</a>")
+	view.Render(w, AboutFormData{
+		Title: "关于我们",
+		Body:  "此博客是用以记录编程笔记，如您有反馈或建议，请联系 QQ:123456",
+	}, "pages.about")
 }
 
 // Home 首页
