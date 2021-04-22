@@ -3,6 +3,7 @@ package controllers
 import (
 	"GoBlog/app/models/user"
 	"GoBlog/app/requests"
+	"GoBlog/pkg/auth"
 	"GoBlog/pkg/view"
 	"fmt"
 	"net/http"
@@ -54,5 +55,18 @@ func (*AuthController) Login(w http.ResponseWriter, r *http.Request) {
 
 // DoLogin 处理登录表单逻辑
 func (*AuthController) DoLogin(w http.ResponseWriter, r *http.Request) {
+	// 1. 初始化表单数据
+	email := r.PostFormValue("email")
+	password := r.PostFormValue("password")
 
+	// 2. 尝试登录
+	if err := auth.Attempt(email, password); err == nil {
+		http.Redirect(w, r, "/", http.StatusFound)
+	} else {
+		view.RenderSimple(w, view.D{
+			"Error":    err.Error(),
+			"Email":    email,
+			"Password": password,
+		}, "auth.login")
+	}
 }
