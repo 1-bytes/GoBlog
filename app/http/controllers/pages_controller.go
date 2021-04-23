@@ -16,9 +16,9 @@ type AboutFormData struct {
 
 // About 关于
 func (*PagesController) About(w http.ResponseWriter, r *http.Request) {
-	view.Render(w, AboutFormData{
-		Title: "关于我们",
-		Body:  "此博客是用以记录编程笔记，如您有反馈或建议，请联系 QQ:123456",
+	view.Render(w, view.D{
+		"Title": "关于我们",
+		"Body":  "此博客是用以记录编程笔记，如您有反馈或建议，请联系 QQ:123456",
 	}, "pages.about")
 }
 
