@@ -38,9 +38,10 @@ func (*AuthController) DoRegister(w http.ResponseWriter, r *http.Request) {
 	} else {
 		// 4. 验证成功，创建数据
 		err := _user.Create()
-
 		if _user.ID > 0 && err == nil {
-			fmt.Fprint(w, "插入成功，ID 为"+_user.GetStringID())
+			// 登录用户并跳转到首页
+			auth.Login(_user)
+			http.Redirect(w, r, "/", http.StatusFound)
 		} else {
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprint(w, "创建用户失败，请联系管理员")
