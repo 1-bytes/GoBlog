@@ -41,7 +41,7 @@ func init() {
 		Encryption:     emailEncryption,
 		ConnectTimeout: 10 * time.Second,
 		SendTimeout:    10 * time.Second,
-		KeepAlive:      false,
+		KeepAlive:      true,
 	}}
 	client, err := server.Connect()
 	logger.LogError(err)
@@ -49,9 +49,9 @@ func init() {
 }
 
 // SendEmail 发送邮件
-func (c *SMTPServer) SendEmail(tplName string, toEmail string) bool {
+func (c *SMTPServer) SendEmail(tplName string, toEmail string, arg string) error {
 	// 获取邮件模板
-	tpl := c.getEmailTpls(tplName, "https://xxxx.com")
+	tpl := c.getEmailTpls(tplName, arg)
 
 	email := mail.NewMSG()
 	email.SetFrom(tpl.from).
@@ -60,26 +60,22 @@ func (c *SMTPServer) SendEmail(tplName string, toEmail string) bool {
 	email.SetBody(mail.TextPlain, tpl.body)
 	err := email.Send(smtpClient)
 	logger.LogError(err)
-	return logger.HasError(err)
+	return err
 }
 
 // getEmailTpls 获取邮箱模板
-func (c *SMTPServer) getEmailTpls(tplName string, urls ...string) emailTpl {
+func (c *SMTPServer) getEmailTpls(tplName string, arg string) emailTpl {
 	data := MapData{
 		"verifyEmail": emailTpl{
 			from:  "GoBlog 技术支持 <" + emailUsername + ">",
 			title: "邮箱验证",
-			body:  "你好，这是一封邮箱验证邮件。\n如果不是您的操作，请忽略。\n验证链接：",
+			body:  "你好，这是一封邮箱验证邮件（如果不是您的操作，请忽略。）\n验证码：" + arg,
 		},
 		"retrievePassword": emailTpl{
 			from:  "GoBlog 技术支持 <" + emailUsername + ">",
 			title: "找回密码",
-			body:  "你好，这是一封找回密码邮件。\n如果不是您的操作，请忽略。\n点击链接重置密码：",
+			body:  "你好，这是一封找回密码邮件（如果不是您的操作，请忽略。）\n重置密码链接：" + arg,
 		},
 	}
-	result := data[tplName]
-	for _, url := range urls {
-		result.body += url
-	}
-	return result
+	return data[tplName]
 }

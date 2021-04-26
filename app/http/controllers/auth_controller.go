@@ -4,6 +4,7 @@ import (
 	"GoBlog/app/models/user"
 	"GoBlog/app/requests"
 	"GoBlog/pkg/auth"
+	"GoBlog/pkg/email"
 	"GoBlog/pkg/view"
 	"fmt"
 	"net/http"
@@ -50,23 +51,23 @@ func (*AuthController) DoRegister(w http.ResponseWriter, r *http.Request) {
 }
 
 // Login 显示登录表单
-func (*AuthController) Login(w http.ResponseWriter, r *http.Request) {
+func (*AuthController) Login(w http.ResponseWriter, _ *http.Request) {
 	view.RenderSimple(w, view.D{}, "auth.login")
 }
 
 // DoLogin 处理登录表单逻辑
 func (*AuthController) DoLogin(w http.ResponseWriter, r *http.Request) {
 	// 1. 初始化表单数据
-	email := r.PostFormValue("email")
+	emailAddress := r.PostFormValue("email")
 	password := r.PostFormValue("password")
 
 	// 2. 尝试登录
-	if err := auth.Attempt(email, password); err == nil {
+	if err := auth.Attempt(emailAddress, password); err == nil {
 		http.Redirect(w, r, "/", http.StatusFound)
 	} else {
 		view.RenderSimple(w, view.D{
 			"Error":    err.Error(),
-			"Email":    email,
+			"Email":    emailAddress,
 			"Password": password,
 		}, "auth.login")
 	}
@@ -76,4 +77,13 @@ func (*AuthController) DoLogin(w http.ResponseWriter, r *http.Request) {
 func (*AuthController) Logout(w http.ResponseWriter, r *http.Request) {
 	auth.Logout()
 	http.Redirect(w, r, "/", http.StatusFound)
+}
+
+// SendVerifyCode 发送验证码
+func (*AuthController) SendVerifyCode(w http.ResponseWriter, r *http.Request) {
+	emailAddress := r.PostFormValue("email")
+	var server email.SMTPServer
+	if server.SendEmail("verifyEmail", emailAddress, "837201") == nil {
+		fmt.Fprintf(w, "ok")
+	}
 }
