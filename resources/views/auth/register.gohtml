@@ -21,17 +21,6 @@
       </div>
 
       <div class="form-group row mb-3">
-        <label for="email" class="col-md-4 col-form-label text-md-right">E-mail</label>
-        <div class="col-md-6">
-          <input id="email" type="email" class="form-control {{if .Errors.email }}is-invalid {{end}}" name="email"
-                 value="{{ .User.Email }}" required="">
-          {{ with .Errors.email }}
-            {{ template "invalid-feedback" . }}
-          {{ end }}
-        </div>
-      </div>
-
-      <div class="form-group row mb-3">
         <label for="password" class="col-md-4 col-form-label text-md-right">密码</label>
         <div class="col-md-6">
           <input id="password" type="password" class="form-control {{if .Errors.password }}is-invalid {{end}}"
@@ -54,6 +43,31 @@
         </div>
       </div>
 
+      <div class="form-group row mb-3">
+        <label for="email" class="col-md-4 col-form-label text-md-right">E-mail</label>
+        <div class="col-md-6">
+          <div class="input-group">
+            <input id="email" type="email" class="form-control {{if .Errors.email }}is-invalid {{end}}" name="email"
+                   aria-describedby="send-verify-code" value="{{ .User.Email }}" required="">
+            <button class="btn btn-outline-secondary" type="button" id="send-verify-code">发送验证码</button>
+          </div>
+          {{ with .Errors.email }}
+            {{ template "invalid-feedback" . }}
+          {{ end }}
+        </div>
+      </div>
+
+      <div class="form-group row mb-3">
+        <label for="name" class="col-md-4 col-form-label text-md-right">验证码</label>
+        <div class="col-md-6">
+          <input id="name" type="text" class="form-control {{if .Errors.verify_code }}is-invalid {{end}}"
+                 name="verify_code" value="{{ .User.VerifyCode }}" required="" autofocus="">
+          {{ with .Errors.verify_code }}
+            {{ template "invalid-feedback" . }}
+          {{ end }}
+        </div>
+      </div>
+
       <div class="form-group row mb-3 mb-0 mt-4">
         <div class="col-md-6 offset-md-4">
           <button type="submit" class="btn btn-primary">
@@ -70,5 +84,73 @@
     <a href="/" class="text-sm text-muted" style="float: left"><small>返回首页</small></a>
     <a href="/" class="text-sm text-muted" style="float: right"><small>登录</small></a>
   </div>
+  <script type="text/javascript" src="/js/jquery-3.6.0.min.js"></script>
+  <script type="text/javascript">
+    $(function ($) {
+      let buttonSendVerifyCode = $("#send-verify-code");
+      let inputEmail = $("input#email");
 
+      // 启动60秒倒计时发送验证码
+      let startCountDown = function () {
+        let buttonText = "发送验证码"
+        if (buttonSendVerifyCode.text() === buttonText) {
+          buttonSendVerifyCode.text(60)
+          buttonSendVerifyCode.attr("disabled", true)
+          let id = setInterval(function () {
+            let timer = buttonSendVerifyCode.text()
+            if (timer > 1) {
+              buttonSendVerifyCode.text(buttonSendVerifyCode.text() - 1)
+            } else {
+              clearInterval(id)
+              buttonSendVerifyCode.text(buttonText)
+              buttonSendVerifyCode.attr("disabled", false)
+            }
+          }, 1000);
+        }
+      };
+
+      // 发送邮箱验证码 ajax
+      let sendEmail = function (email) {
+        $.ajax({
+          url: "{{ RouteName2URL "auth.sendVerifyCode" }}",
+          type: "POST",
+          dataType: "text",
+          data: {"email": email,},
+          success: function (msg) {
+            if (msg !== "ok") {
+              alert("验证码发送失败，请稍后再试")
+              return
+            }
+            startCountDown()
+          },
+          async: true,
+        });
+      };
+
+      // 检查是否输入了邮箱
+      let checkEmailCode = function () {
+        if (inputEmail.val().length === 0) {
+          buttonSendVerifyCode.attr("disabled", true)
+          return
+        }
+        buttonSendVerifyCode.attr("disabled", false)
+      };
+
+      /**
+       * 输入邮件地址 事件
+       */
+      checkEmailCode()
+      inputEmail.bind("input propertychange", function () {
+        checkEmailCode()
+      });
+
+      /**
+       * 发送邮件按钮 事件
+       */
+      buttonSendVerifyCode.click(function () {
+        let email = inputEmail.val()
+        sendEmail(email)
+      });
+    });
+  </script>
 {{end}}

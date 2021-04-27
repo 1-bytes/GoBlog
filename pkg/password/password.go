@@ -2,7 +2,9 @@ package password
 
 import (
 	"GoBlog/pkg/logger"
+	"crypto/rand"
 	"golang.org/x/crypto/bcrypt"
+	"math/big"
 )
 
 // Hash 使用 bcrypt 对密码进行加密
@@ -25,4 +27,21 @@ func CheckHash(password, hash string) bool {
 func IsHashed(str string) bool {
 	// bcrypt 后的长度等于 60
 	return len(str) == 60
+}
+
+// GetRandomPassword 获取一个随机密码
+func GetRandomPassword(n int, allowedChars ...[]rune) string {
+	var defaultLetters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+	var letters []rune
+	if len(allowedChars) == 0 {
+		letters = defaultLetters
+	} else {
+		letters = allowedChars[0]
+	}
+	b := make([]rune, n)
+	for i := range b {
+		p, _ := rand.Int(rand.Reader, big.NewInt(10))
+		b[i] = letters[int(p.Int64())]
+	}
+	return string(b)
 }

@@ -26,6 +26,7 @@ func (*AuthController) DoRegister(w http.ResponseWriter, r *http.Request) {
 		Email:           r.PostFormValue("email"),
 		Password:        r.PostFormValue("password"),
 		PasswordConfirm: r.PostFormValue("password_confirm"),
+		VerifyCode:      r.PostFormValue("verify_code"),
 	}
 	// 2. 表单规则
 	errs := requests.ValidateRegistrationForm(_user)
@@ -83,7 +84,11 @@ func (*AuthController) Logout(w http.ResponseWriter, r *http.Request) {
 func (*AuthController) SendVerifyCode(w http.ResponseWriter, r *http.Request) {
 	emailAddress := r.PostFormValue("email")
 	var server email.SMTPServer
-	if server.SendEmail("verifyEmail", emailAddress, "837201") == nil {
-		fmt.Fprintf(w, "ok")
+	if err := server.SendEmail("verifyEmail", emailAddress, auth.CreateVerifyCode()); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(w, "发送邮件错误，请稍后再试")
+		return
 	}
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprint(w, "ok")
 }

@@ -2,6 +2,7 @@ package requests
 
 import (
 	"GoBlog/app/models/user"
+	"GoBlog/pkg/auth"
 	"github.com/thedevsaddam/govalidator"
 	"net/url"
 )
@@ -14,7 +15,7 @@ func ValidateRegistrationForm(data user.User) url.Values {
 		"password":         []string{"required", "min:6"},
 		"password_confirm": []string{"required"},
 		"email":            []string{"required", "min:4", "max:30", "email", "not_exists:users,email"},
-		"verify_code":      []string{"required", "digits_between:6:10"},
+		"verify_code":      []string{"required", "digits:6"},
 	}
 
 	// 2. 定制错误信息
@@ -39,7 +40,7 @@ func ValidateRegistrationForm(data user.User) url.Values {
 		},
 		"verify_code": []string{
 			"required:验证码为必填项，请前往邮箱查看验证码",
-			"digits_between:验证码长度不符合规范",
+			"digits:请输入 6 位数验证码",
 		},
 	}
 
@@ -55,6 +56,9 @@ func ValidateRegistrationForm(data user.User) url.Values {
 	errs := govalidator.New(opts).ValidateStruct()
 	if data.Password != data.PasswordConfirm {
 		errs["password_confirm"] = append(errs["password_confirm"], "两次输入的密码不匹配")
+	}
+	if !auth.CheckVerifyCode(data.VerifyCode) {
+		errs["verify_code"] = append(errs["verify_code"], "验证码错误")
 	}
 	return errs
 }
