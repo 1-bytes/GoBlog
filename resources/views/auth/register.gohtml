@@ -7,7 +7,7 @@
 
     <h3 class="mb-5 text-center">用户注册</h3>
 
-    <form action="{{ RouteName2URL "auth.doregister" }}" method="post">
+    <form action="{{ RouteName2URL "auth.doRegister" }}" method="post">
 
       <div class="form-group row mb-3">
         <label for="name" class="col-md-4 col-form-label text-md-right">姓名</label>
@@ -81,9 +81,10 @@
   </div>
 
   <div class="mb-3">
-    <a href="/" class="text-sm text-muted" style="float: left"><small>返回首页</small></a>
-    <a href="/" class="text-sm text-muted" style="float: right"><small>登录</small></a>
+    <a href="{{ RouteName2URL "home" }}" class="text-sm text-muted" style="float: left"><small>返回首页</small></a>
+    <a href="{{ RouteName2URL "auth.login" }}" class="text-sm text-muted" style="float: right"><small>登录</small></a>
   </div>
+
   <script type="text/javascript" src="/js/jquery-3.6.0.min.js"></script>
   <script type="text/javascript">
     $(function ($) {

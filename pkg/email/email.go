@@ -71,7 +71,7 @@ func (c *SMTPServer) getEmailTpls(tplName string, arg string) emailTpl {
 			title: "邮箱验证",
 			body:  "你好，这是一封邮箱验证邮件（如果不是您的操作，请忽略。）\n验证码：" + arg,
 		},
-		"retrievePassword": emailTpl{
+		"lostPassword": emailTpl{
 			from:  "GoBlog 技术支持 <" + emailUsername + ">",
 			title: "找回密码",
 			body:  "你好，这是一封找回密码邮件（如果不是您的操作，请忽略。）\n重置密码链接：" + arg,

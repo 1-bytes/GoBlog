@@ -35,17 +35,21 @@
           <button type="submit" class="btn btn-primary">
             登录
           </button>
+
+          <div style="float: right">
+            <a href="{{ RouteName2URL "auth.register" }}" class="btn btn-primary">还没账号？点我去注册</a>
+          </div>
+
         </div>
       </div>
 
     </form>
 
   </div>
-
-
   <div class="mb-3">
-    <a href="/" class="text-sm text-muted" style="float: left"><small>返回首页</small></a>
-    <a href="" class="text-sm text-muted float-right" style="float: right"><small>找回密码</small></a>
+    <a href="{{ RouteName2URL "home" }}" class="text-sm text-muted" style="float: left"><small>返回首页</small></a>
+    <a href="{{ RouteName2URL "auth.lostPassword" }}" class="text-sm text-muted float-right"
+       style="float: right"><small>找回密码</small></a>
   </div>
 
 {{end}}

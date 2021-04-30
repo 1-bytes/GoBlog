@@ -2,10 +2,13 @@ package auth
 
 import (
 	"GoBlog/app/models/user"
+	"GoBlog/pkg/encrypt/aes"
 	"GoBlog/pkg/password"
 	"GoBlog/pkg/session"
+	"encoding/hex"
 	"errors"
 	"gorm.io/gorm"
+	"net/http"
 	"strconv"
 	"time"
 )
@@ -98,4 +101,18 @@ func CheckVerifyCode(vcode string) bool {
 	}
 	session.Forget("VerifyCode")
 	return true
+}
+
+// GetLostPasswordURL 获取重置密码链接
+func GetLostPasswordURL(r *http.Request, email string) string {
+	url := r.Host
+	timeStr := strconv.FormatInt(time.Now().Unix()+1800, 10)
+	// 数据加密
+	aes := aes.Aes{
+		Key: []byte("PNKZIJWMFCHQDTYLRSEOUGVBXARGHBWH"),
+	}
+	origData := []byte(timeStr + email)
+	encryptData := hex.EncodeToString(aes.AesEncryptCFB(origData))
+	// TODO 这里的url还需要再处理下再返回
+	return url + encryptData
 }

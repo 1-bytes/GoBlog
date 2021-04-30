@@ -51,6 +51,19 @@ func (*AuthController) DoRegister(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// SendVerifyCode 处理发送验证码逻辑
+func (*AuthController) SendVerifyCode(w http.ResponseWriter, r *http.Request) {
+	emailAddress := r.PostFormValue("email")
+	var server email.SMTPServer
+	if err := server.SendEmail("verifyEmail", emailAddress, auth.CreateVerifyCode()); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(w, "发送邮件错误，请稍后再试")
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprint(w, "ok")
+}
+
 // Login 显示登录表单
 func (*AuthController) Login(w http.ResponseWriter, _ *http.Request) {
 	view.RenderSimple(w, view.D{}, "auth.login")
@@ -80,15 +93,33 @@ func (*AuthController) Logout(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-// SendVerifyCode 发送验证码
-func (*AuthController) SendVerifyCode(w http.ResponseWriter, r *http.Request) {
+// LostPassword 找回密码页面
+func (*AuthController) LostPassword(w http.ResponseWriter, r *http.Request) {
+	view.RenderSimple(w, view.D{}, "auth.lostPassword")
+}
+
+// DoLostPassword 处理找回密码逻辑
+func (*AuthController) DoLostPassword(w http.ResponseWriter, r *http.Request) {
+	// 初始化数据
 	emailAddress := r.PostFormValue("email")
+	_user := user.User{
+		Email: emailAddress,
+	}
+	// 表单验证
+	errs := requests.ValidateLostPasswordForm(_user)
+	if len(errs) > 0 {
+		view.RenderSimple(w, view.D{
+			"Errors": errs,
+			"User":   _user,
+		}, "auth.lostPassword")
+		return
+	}
+	url := auth.GetLostPasswordURL(r, emailAddress)
+
 	var server email.SMTPServer
-	if err := server.SendEmail("verifyEmail", emailAddress, auth.CreateVerifyCode()); err != nil {
+	if err := server.SendEmail("lostPassword", emailAddress, url); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(w, "发送邮件错误，请稍后再试")
 		return
 	}
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprint(w, "ok")
 }
