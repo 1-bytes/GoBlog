@@ -6,6 +6,7 @@ import (
 	"GoBlog/pkg/route"
 	"html/template"
 	"io"
+	"net/http"
 	"path/filepath"
 	"strings"
 )
@@ -58,4 +59,13 @@ func getTemplateFiles(tplFiles ...string) []string {
 
 	// 4. 合并所有文件
 	return append(layoutFiles, tplFiles...)
+}
+
+// RenderErrorTemplate 渲染错误视图
+func RenderSimpleMessage(w http.ResponseWriter, errMsg interface{}, httpStatus int) {
+	w.WriteHeader(httpStatus)
+	RenderSimple(w, D{
+		"Title": "错误",
+		"Body":  errMsg,
+	}, "pages.message")
 }

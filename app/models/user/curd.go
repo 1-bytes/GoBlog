@@ -21,9 +21,18 @@ func Get(uidStr string) (User, error) {
 func GetByEmail(email string) (User, error) {
 	var user User
 	if err := model.DB.Where("email = ?", email).First(&user).Error; err != nil {
+		logger.LogError(err)
 		return User{}, err
 	}
 	return user, nil
+}
+
+// HasUserByEmail 通过 Email 判断用户是否存在，存在返回 TRUE，不存在返回 FALSE
+func HasUserByEmail(email string) bool {
+	var user User
+	var count int64
+	model.DB.Where("email = ?", email).First(&user).Count(&count)
+	return count != 0
 }
 
 // Create 创建用户，通过 User.ID 来判断是否创建成功
@@ -33,6 +42,16 @@ func (user *User) Create() (err error) {
 		return err
 	}
 	return nil
+}
+
+// Update 更新文章，如果文章不存在则自动创建
+func (user *User) Update() (rowsAffected int64, err error) {
+	result := model.DB.Save(&user)
+	if err = model.DB.Error; err != nil {
+		logger.LogError(err)
+		return 0, err
+	}
+	return result.RowsAffected, nil
 }
 
 // ComparePassword 对比密码是否匹配

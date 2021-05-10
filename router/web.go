@@ -26,14 +26,16 @@ func RegisterWebRoutes(r *mux.Router) {
 
 	// 用户认证
 	auc := new(controllers.AuthController)
-	r.HandleFunc("/auth/register", auc.Register).Methods("GET").Name("auth.register")                      // 注册页面
-	r.HandleFunc("/auth/do-register", auc.DoRegister).Methods("POST").Name("auth.doRegister")              // 注册逻辑
-	r.HandleFunc("/auth/login", auc.Login).Methods("GET").Name("auth.login")                               // 登录页面
-	r.HandleFunc("/auth/dologin", auc.DoLogin).Methods("POST").Name("auth.dologin")                        // 登录逻辑
-	r.HandleFunc("/auth/logout", auc.Logout).Methods("POST").Name("auth.logout")                           // 退出登录
-	r.HandleFunc("/auth/send-verify-code", auc.SendVerifyCode).Methods("POST").Name("auth.sendVerifyCode") // 发送验证码
-	r.HandleFunc("/auth/lost-password", auc.LostPassword).Methods("GET").Name("auth.lostPassword")         // 找回密码
-	r.HandleFunc("/auth/do-lost-password", auc.DoLostPassword).Methods("POST").Name("auth.doLostPassword") // 找回密码逻辑(发邮件)
+	r.HandleFunc("/auth/register", auc.Register).Methods("GET").Name("auth.register")                       // 注册页面
+	r.HandleFunc("/auth/do-register", auc.DoRegister).Methods("POST").Name("auth.doRegister")               // 注册逻辑
+	r.HandleFunc("/auth/login", auc.Login).Methods("GET").Name("auth.login")                                // 登录页面
+	r.HandleFunc("/auth/dologin", auc.DoLogin).Methods("POST").Name("auth.dologin")                         // 登录逻辑
+	r.HandleFunc("/auth/logout", auc.Logout).Methods("POST").Name("auth.logout")                            // 退出登录
+	r.HandleFunc("/auth/send-verify-code", auc.SendVerifyCode).Methods("POST").Name("auth.sendVerifyCode")  // 发送验证码
+	r.HandleFunc("/auth/lost-password", auc.LostPassword).Methods("GET").Name("auth.lostPassword")          // 找回密码页面
+	r.HandleFunc("/auth/do-lost-password", auc.DoLostPassword).Methods("POST").Name("auth.doLostPassword")  // 找回密码逻辑（发邮件）
+	r.HandleFunc("/auth/repassword/{token:[\\w]+?}", auc.Repassword).Methods("GET").Name("auth.repassword") // 重置密码页面（找回密码）
+	r.HandleFunc("/auth/do-repassword", auc.DoRepassword).Methods("POST").Name("auth.doRepassword")         // 重置密码逻辑（找回密码）
 
 	// 静态资源
 	r.PathPrefix("/css/").Handler(http.FileServer(http.Dir("./public")))

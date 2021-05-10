@@ -1,0 +1,37 @@
+{{define "title"}}
+  {{ .Title }}
+{{end}}
+
+{{define "main"}}
+  <div class="blog-main">
+    <div class="blog-post bg-white p-5 rounded shadow mb-4 text-center">
+      <div class="lead">{{ .Body }}</div>
+      <br>
+      <div id="count-down" class="text-muted"></div>
+    </div><!-- /.blog-post -->
+  </div>
+
+  <script type="text/javascript" src="/js/jquery-3.6.0.min.js"></script>
+  <script type="text/javascript">
+    $(function ($) {
+      urlSkip({{ RouteName2URL "home" }}, 10)
+
+      /**
+       * url 倒计时跳转代码
+       * @param url
+       * @param countDownTime
+       */
+      function urlSkip(url, countDownTime) {
+        for (let i = countDownTime; i >= 0; i--) {
+          setTimeout(function () {
+            if (i === 0) {
+              window.location = url;
+            }
+            let urlInfo = "将在 " + i + " 秒后跳转到首页 <a href='" + url + "' class='link-secondary'>点我立即跳转</a>"
+            $("div#count-down").html(urlInfo)
+          }, (countDownTime - i) * 1000);
+        }
+      }
+    })
+  </script>
+{{end}}

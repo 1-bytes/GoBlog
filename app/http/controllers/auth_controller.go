@@ -5,8 +5,12 @@ import (
 	"GoBlog/app/requests"
 	"GoBlog/pkg/auth"
 	"GoBlog/pkg/email"
+	"GoBlog/pkg/logger"
+	"GoBlog/pkg/route"
 	"GoBlog/pkg/view"
+	"errors"
 	"fmt"
+	"gorm.io/gorm"
 	"net/http"
 )
 
@@ -109,17 +113,91 @@ func (*AuthController) DoLostPassword(w http.ResponseWriter, r *http.Request) {
 	errs := requests.ValidateLostPasswordForm(_user)
 	if len(errs) > 0 {
 		view.RenderSimple(w, view.D{
-			"Errors": errs,
 			"User":   _user,
+			"Errors": errs,
 		}, "auth.lostPassword")
 		return
 	}
-	url := auth.GetLostPasswordURL(r, emailAddress)
-
+	// 获取找回密码 URL
+	url, err := auth.GetLostPasswordURL(r, emailAddress)
+	logger.LogError(err)
+	// 发送邮件
 	var server email.SMTPServer
 	if err := server.SendEmail("lostPassword", emailAddress, url); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(w, "发送邮件错误，请稍后再试")
+		view.RenderSimple(w, view.D{
+			"User": _user,
+			"Errors": map[string]string{
+				"email": err.Error(),
+			},
+		}, "auth.lostPassword")
 		return
 	}
+	view.RenderSimple(w, view.D{
+		"Title": "跳转",
+		"Body":  "发送邮件成功，请前往邮箱进行下一步操作。",
+	}, "pages.message")
+}
+
+// Repassword 设置密码页面（找回密码）
+func (*AuthController) Repassword(w http.ResponseWriter, r *http.Request) {
+	token := route.GetRouteVariable("token", r)
+	emailAddress, err := auth.GetLostPasswordEmailByToken(token)
+	_user := user.User{
+		Name:            "",
+		Email:           emailAddress,
+		Password:        "",
+		PasswordConfirm: "",
+		VerifyCode:      "",
+	}
+	if err != nil {
+		view.RenderSimpleMessage(w, err, http.StatusInternalServerError)
+	} else {
+		w.WriteHeader(http.StatusOK)
+		view.RenderSimple(w, view.D{
+			"User":  _user,
+			"Token": token,
+		}, "auth.repassword")
+	}
+}
+
+// DoRepassword 处理设置密码逻辑（找回密码）
+func (*AuthController) DoRepassword(w http.ResponseWriter, r *http.Request) {
+	// 接收参数 解密TOKEN
+	token := r.PostFormValue("token")
+	emailAddress, err := auth.GetLostPasswordEmailByToken(token)
+	_user := user.User{
+		Email:           emailAddress,
+		Password:        r.PostFormValue("password"),
+		PasswordConfirm: r.PostFormValue("password_confirm"),
+	}
+	// 表单验证
+	errs := requests.ValidateUpdatePasswordForm(_user)
+	if len(errs) > 0 {
+		view.RenderSimple(w, view.D{
+			"User":   _user,
+			"Token":  token,
+			"Errors": errs,
+		}, "auth.repassword")
+		return
+	}
+	// 获取账户信息
+	user, err := user.GetByEmail(emailAddress)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			view.RenderSimpleMessage(w, "用户不存在", http.StatusNotFound)
+		} else {
+			view.RenderSimpleMessage(w, "服务器内部错误", http.StatusInternalServerError)
+		}
+		return
+	}
+	// 更新密码
+	user.Email = _user.Email
+	user.Password = _user.Password
+	user.PasswordConfirm = _user.PasswordConfirm
+	rowsAffected, err := user.Update()
+	if err != nil && rowsAffected == 0 {
+		view.RenderSimpleMessage(w, "服务器内部错误", http.StatusInternalServerError)
+	}
+	auth.Login(user)
+	view.RenderSimpleMessage(w, "密码修改成功", http.StatusOK)
 }

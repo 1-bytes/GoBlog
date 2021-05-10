@@ -2,8 +2,9 @@ package auth
 
 import (
 	"GoBlog/app/models/user"
-	"GoBlog/pkg/encrypt/aes"
+	"GoBlog/pkg/encrypts"
 	"GoBlog/pkg/password"
+	"GoBlog/pkg/route"
 	"GoBlog/pkg/session"
 	"encoding/hex"
 	"errors"
@@ -92,7 +93,7 @@ func CheckVerifyCode(vcode string) bool {
 	// 前十位是秒级时间戳，剩下的是验证码
 	expires := verifyCode[:10]
 	verifyCode = verifyCode[10:]
-	timeStr := strconv.FormatInt(time.Now().Unix()+1800, 10)
+	timeStr := strconv.FormatInt(time.Now().Unix(), 10)
 	if timeStr < expires {
 		return false
 	}
@@ -104,15 +105,44 @@ func CheckVerifyCode(vcode string) bool {
 }
 
 // GetLostPasswordURL 获取重置密码链接
-func GetLostPasswordURL(r *http.Request, email string) string {
-	url := r.Host
-	timeStr := strconv.FormatInt(time.Now().Unix()+1800, 10)
+func GetLostPasswordURL(r *http.Request, email string) (url string, err error) {
+	expires := strconv.FormatInt(time.Now().Unix()+1800, 10)
 	// 数据加密
-	aes := aes.Aes{
+	aes := encrypts.Aes{
 		Key: []byte("PNKZIJWMFCHQDTYLRSEOUGVBXARGHBWH"),
 	}
-	origData := []byte(timeStr + email)
-	encryptData := hex.EncodeToString(aes.AesEncryptCFB(origData))
-	// TODO 这里的url还需要再处理下再返回
-	return url + encryptData
+	if !user.HasUserByEmail(email) {
+		err := errors.New("邮箱错误或账号不存在")
+		return "", err
+	}
+	origData := []byte(expires + email)
+	token := hex.EncodeToString(aes.AesEncryptCFB(origData))
+	scheme := "http"
+	if r.TLS != nil {
+		scheme = "https"
+	}
+	url = scheme + "://" + r.Host + route.Name2URL("auth.repassword", "token", token)
+	return url, nil
+}
+
+// GetLostPasswordEmailByToken 根据 TOKEN 获取
+func GetLostPasswordEmailByToken(token string) (email string, err error) {
+	var encrypted []byte
+	if encrypted, err = hex.DecodeString(token); err != nil {
+		err := errors.New("令牌错误或已过期")
+		return "", err
+	}
+	aes := encrypts.Aes{
+		Key: []byte("PNKZIJWMFCHQDTYLRSEOUGVBXARGHBWH"),
+	}
+
+	decrypted := string(aes.AesDecryptCFB(encrypted))
+	timeStr := strconv.FormatInt(time.Now().Unix(), 10)
+	expires := decrypted[:10]
+	if timeStr > expires {
+		err := errors.New("令牌错误或已过期")
+		return "", err
+	}
+	email = decrypted[10:]
+	return email, nil
 }
