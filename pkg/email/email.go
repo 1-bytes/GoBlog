@@ -27,7 +27,7 @@ const (
 	emailHost       = "mail.gandi.net"
 	emailPort       = 587
 	emailUsername   = "support@tcp.so"
-	emailPassword   = "3KS7B5O8PM0NUTE9"
+	emailPassword   = "L6MXSG38UBZ5TQDV"
 	emailEncryption = mail.EncryptionSTARTTLS
 )
 
