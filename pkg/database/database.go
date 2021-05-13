@@ -1,6 +1,7 @@
 package database
 
 import (
+	"GoBlog/pkg/config"
 	"GoBlog/pkg/logger"
 	"database/sql"
 	"github.com/go-sql-driver/mysql"
@@ -18,17 +19,17 @@ func Initialize() {
 // initDB 初始化数据库连接.
 func initDB() {
 	var err error
-	config := mysql.Config{
-		User:                 "root",
-		Passwd:               "FLHY1VJ0WEOBIG3N",
-		Addr:                 "127.0.0.1:3306",
+	cfg := mysql.Config{
+		Addr:                 config.GetString("database.mysql.host"),
+		User:                 config.GetString("database.mysql.username"),
+		Passwd:               config.GetString("database.mysql.password"),
+		DBName:               config.GetString("database.mysql.database"),
 		Net:                  "tcp",
-		DBName:               "goblog",
 		AllowNativePasswords: true,
 	}
 
 	// 设置数据库连接池
-	DB, err = sql.Open("mysql", config.FormatDSN())
+	DB, err = sql.Open("mysql", cfg.FormatDSN())
 	logger.LogError(err)
 
 	// 设置最大连接数
