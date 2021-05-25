@@ -4,9 +4,9 @@ import (
 	"GoBlog/app/models/user"
 	"GoBlog/app/requests"
 	"GoBlog/pkg/auth"
-	"GoBlog/pkg/email"
 	"GoBlog/pkg/flash"
 	"GoBlog/pkg/logger"
+	"GoBlog/pkg/mail"
 	"GoBlog/pkg/route"
 	"GoBlog/pkg/view"
 	"errors"
@@ -60,8 +60,8 @@ func (*AuthController) DoRegister(w http.ResponseWriter, r *http.Request) {
 // SendVerifyCode 处理发送验证码逻辑
 func (*AuthController) SendVerifyCode(w http.ResponseWriter, r *http.Request) {
 	emailAddress := r.PostFormValue("email")
-	var server email.SMTPServer
-	if err := server.SendEmail("verifyEmail", emailAddress, auth.CreateVerifyCode()); err != nil {
+	var server mail.Mail
+	if err := server.Send("verifyMail", emailAddress, auth.CreateVerifyCode()); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(w, "发送邮件错误，请稍后再试")
 		return
@@ -127,8 +127,8 @@ func (*AuthController) DoLostPassword(w http.ResponseWriter, r *http.Request) {
 	url, err := auth.GetLostPasswordURL(r, emailAddress)
 	logger.LogError(err)
 	// 发送邮件
-	var server email.SMTPServer
-	if err := server.SendEmail("lostPassword", emailAddress, url); err != nil {
+	server := mail.Mail{}
+	if err := server.Send("lostPassword", emailAddress, url); err != nil {
 		view.RenderSimple(w, view.D{
 			"User": _user,
 			"Errors": map[string]string{
