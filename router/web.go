@@ -18,24 +18,24 @@ func RegisterWebRoutes(r *mux.Router) {
 	r.HandleFunc("/", ac.Index).Methods("GET").Name("home")
 	r.HandleFunc("/articles/{id:[0-9]+}", ac.Show).Methods("GET").Name("articles.show")
 	r.HandleFunc("/articles", ac.Index).Methods("GET").Name("articles.index")
-	r.HandleFunc("/articles", ac.Store).Methods("POST").Name("articles.store")
-	r.HandleFunc("/articles/create", ac.Create).Methods("GET").Name("articles.create")
-	r.HandleFunc("/articles/{id:[0-9]+}/edit", ac.Edit).Methods("GET").Name("articles.edit")
-	r.HandleFunc("/articles/{id:[0-9]+}", ac.Update).Methods("POST").Name("articles.update")
-	r.HandleFunc("/articles/{id:[0-9]+}/delete", ac.Delete).Methods("POST").Name("articles.delete")
+	r.HandleFunc("/articles/create", middlewares.Auth(ac.Create)).Methods("GET").Name("articles.create")
+	r.HandleFunc("/articles", middlewares.Auth(ac.Store)).Methods("POST").Name("articles.store")
+	r.HandleFunc("/articles/{id:[0-9]+}/edit", middlewares.Auth(ac.Edit)).Methods("GET").Name("articles.edit")
+	r.HandleFunc("/articles/{id:[0-9]+}", middlewares.Auth(ac.Update)).Methods("POST").Name("articles.update")
+	r.HandleFunc("/articles/{id:[0-9]+}/delete", middlewares.Auth(ac.Delete)).Methods("POST").Name("articles.delete")
 
 	// 用户认证
 	auc := new(controllers.AuthController)
-	r.HandleFunc("/auth/register", auc.Register).Methods("GET").Name("auth.register")                       // 注册页面
-	r.HandleFunc("/auth/do-register", auc.DoRegister).Methods("POST").Name("auth.doRegister")               // 注册逻辑
-	r.HandleFunc("/auth/login", auc.Login).Methods("GET").Name("auth.login")                                // 登录页面
-	r.HandleFunc("/auth/dologin", auc.DoLogin).Methods("POST").Name("auth.dologin")                         // 登录逻辑
-	r.HandleFunc("/auth/logout", auc.Logout).Methods("POST").Name("auth.logout")                            // 退出登录
-	r.HandleFunc("/auth/send-verify-code", auc.SendVerifyCode).Methods("POST").Name("auth.sendVerifyCode")  // 发送验证码
-	r.HandleFunc("/auth/lost-password", auc.LostPassword).Methods("GET").Name("auth.lostPassword")          // 找回密码页面
-	r.HandleFunc("/auth/do-lost-password", auc.DoLostPassword).Methods("POST").Name("auth.doLostPassword")  // 找回密码逻辑（发邮件）
-	r.HandleFunc("/auth/repassword/{token:[\\w]+?}", auc.Repassword).Methods("GET").Name("auth.repassword") // 重置密码页面（找回密码）
-	r.HandleFunc("/auth/do-repassword", auc.DoRepassword).Methods("POST").Name("auth.doRepassword")         // 重置密码逻辑（找回密码）
+	r.HandleFunc("/auth/register", middlewares.Guest(auc.Register)).Methods("GET").Name("auth.register")                      // 注册页面
+	r.HandleFunc("/auth/do-register", middlewares.Guest(auc.DoRegister)).Methods("POST").Name("auth.doRegister")              // 注册逻辑
+	r.HandleFunc("/auth/login", middlewares.Guest(auc.Login)).Methods("GET").Name("auth.login")                               // 登录页面
+	r.HandleFunc("/auth/dologin", middlewares.Guest(auc.DoLogin)).Methods("POST").Name("auth.dologin")                        // 登录逻辑
+	r.HandleFunc("/auth/logout", middlewares.Guest(auc.Logout)).Methods("POST").Name("auth.logout")                           // 退出登录
+	r.HandleFunc("/auth/send-verify-code", auc.SendVerifyCode).Methods("POST").Name("auth.sendVerifyCode")                    // 发送验证码
+	r.HandleFunc("/auth/lost-password", middlewares.Guest(auc.LostPassword)).Methods("GET").Name("auth.lostPassword")         // 找回密码页面
+	r.HandleFunc("/auth/do-lost-password", middlewares.Guest(auc.DoLostPassword)).Methods("POST").Name("auth.doLostPassword") // 找回密码逻辑（发邮件）
+	r.HandleFunc("/auth/repassword/{token:[\\w]+?}", auc.Repassword).Methods("GET").Name("auth.repassword")                   // 重置密码页面（找回密码）
+	r.HandleFunc("/auth/do-repassword", auc.DoRepassword).Methods("POST").Name("auth.doRepassword")                           // 重置密码逻辑（找回密码）
 
 	// 静态资源
 	r.PathPrefix("/css/").Handler(http.FileServer(http.Dir("./public")))
