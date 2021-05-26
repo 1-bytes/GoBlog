@@ -14,3 +14,8 @@ type User struct {
 	PasswordConfirm string `gorm:"-" valid:"password_confirm"`
 	VerifyCode      string `gorm:"-" valid:"verify_code"`
 }
+
+// Link 方法用来生成用户链接
+func (user User) Link() string {
+	return ""
+}

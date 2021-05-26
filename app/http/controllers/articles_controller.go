@@ -39,7 +39,7 @@ func (*ArticlesController) Show(w http.ResponseWriter, r *http.Request) {
 		// --- 4.读取数据成功，显示文章 ---
 		view.Render(w, view.D{
 			"Article": article,
-		}, "articles.show")
+		}, "articles.show", "articles._article_meta")
 	}
 }
 
@@ -56,7 +56,7 @@ func (*ArticlesController) Index(w http.ResponseWriter, _ *http.Request) {
 		// 2. 加载模板
 		view.Render(w, view.D{
 			"Articles": articles,
-		}, "articles.index")
+		}, "articles.index", "articles._article_meta")
 	}
 }
 
