@@ -16,6 +16,15 @@ func Get(idstr string) (Article, error) {
 	return article, nil
 }
 
+// GetByUserID 获取某个用户全部的文章
+func GetByUserID(uid string) ([]Article, error) {
+	var articles []Article
+	if err := model.DB.Where("user_id = ?", uid).Preload("User").Find(&articles).Error; err != nil {
+		return articles, err
+	}
+	return articles, nil
+}
+
 // GetAll 获取全部文章
 func GetAll() ([]Article, error) {
 	var articles []Article

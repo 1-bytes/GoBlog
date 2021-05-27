@@ -36,6 +36,8 @@ func RegisterWebRoutes(r *mux.Router) {
 	r.HandleFunc("/auth/do-lost-password", middlewares.Guest(auc.DoLostPassword)).Methods("POST").Name("auth.doLostPassword") // 找回密码逻辑（发邮件）
 	r.HandleFunc("/auth/repassword/{token:[\\w]+?}", auc.Repassword).Methods("GET").Name("auth.repassword")                   // 重置密码页面（找回密码）
 	r.HandleFunc("/auth/do-repassword", auc.DoRepassword).Methods("POST").Name("auth.doRepassword")                           // 重置密码逻辑（找回密码）
+	uc := new(controllers.UserController)
+	r.HandleFunc("/users/{id:[0-9]+}", uc.Show).Methods("GET").Name("users.show")
 
 	// 静态资源
 	r.PathPrefix("/css/").Handler(http.FileServer(http.Dir("./public")))
