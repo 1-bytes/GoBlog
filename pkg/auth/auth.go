@@ -94,7 +94,7 @@ func CheckVerifyCode(vcode string) bool {
 	expires := verifyCode[:10]
 	verifyCode = verifyCode[10:]
 	timeStr := strconv.FormatInt(time.Now().Unix(), 10)
-	if timeStr < expires {
+	if timeStr > expires {
 		return false
 	}
 	if verifyCode == "" || vcode != verifyCode {

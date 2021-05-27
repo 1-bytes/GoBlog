@@ -2,7 +2,7 @@ package mail
 
 import (
 	"GoBlog/pkg/config"
-	"GoBlog/pkg/logger"
+	"fmt"
 	email "github.com/xhit/go-simple-mail/v2"
 	"time"
 )
@@ -18,10 +18,10 @@ type (
 	}
 )
 
-var smtpClient *email.SMTPClient
+type smtpClient *email.SMTPClient
 
-func (m *Mail) getClient() {
-	var err error
+func (m *Mail) getClient() (smtpClient, error) {
+	fmt.Println(config.GetString("mail.password"))
 	server := &email.SMTPServer{
 		Host:           config.GetString("mail.host"),
 		Port:           config.GetInt("mail.port"),
@@ -32,21 +32,26 @@ func (m *Mail) getClient() {
 		SendTimeout:    time.Duration(config.GetInt64("mail.send_timeout")) * time.Second,
 		KeepAlive:      config.GetBool("mail.keep_alive"),
 	}
-	smtpClient, err = server.Connect()
-	logger.LogError(err)
+	return server.Connect()
 }
 
 // Send 发送邮件
 func (m *Mail) Send(tplName string, toEmail string, arg string) error {
+	client, err := m.getClient()
+	if err != nil {
+		return err
+	}
 	tpl := m.getTemplate(tplName, arg)
 	mailMSG := email.NewMSG()
 	mailMSG.SetFrom(tpl.from).
 		AddTo(toEmail).
 		SetSubject(tpl.title)
 	mailMSG.SetBody(email.TextPlain, tpl.body)
-	err := mailMSG.Send(smtpClient)
-	logger.LogError(err)
-	return err
+	err = mailMSG.Send(client)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // getTemplate 获取邮箱模板
