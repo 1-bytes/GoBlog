@@ -30,7 +30,7 @@ func RegisterWebRoutes(r *mux.Router) {
 	r.HandleFunc("/auth/do-register", middlewares.Guest(auc.DoRegister)).Methods("POST").Name("auth.doRegister")              // 注册逻辑
 	r.HandleFunc("/auth/login", middlewares.Guest(auc.Login)).Methods("GET").Name("auth.login")                               // 登录页面
 	r.HandleFunc("/auth/dologin", middlewares.Guest(auc.DoLogin)).Methods("POST").Name("auth.dologin")                        // 登录逻辑
-	r.HandleFunc("/auth/logout", middlewares.Guest(auc.Logout)).Methods("POST").Name("auth.logout")                           // 退出登录
+	r.HandleFunc("/auth/logout", middlewares.Auth(auc.Logout)).Methods("POST").Name("auth.logout")                            // 退出登录
 	r.HandleFunc("/auth/send-verify-code", auc.SendVerifyCode).Methods("POST").Name("auth.sendVerifyCode")                    // 发送验证码
 	r.HandleFunc("/auth/lost-password", middlewares.Guest(auc.LostPassword)).Methods("GET").Name("auth.lostPassword")         // 找回密码页面
 	r.HandleFunc("/auth/do-lost-password", middlewares.Guest(auc.DoLostPassword)).Methods("POST").Name("auth.doLostPassword") // 找回密码逻辑（发邮件）
