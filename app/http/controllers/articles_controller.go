@@ -4,6 +4,7 @@ import (
 	"GoBlog/app/models/article"
 	"GoBlog/app/policies"
 	"GoBlog/app/requests"
+	"GoBlog/pkg/auth"
 	"GoBlog/pkg/route"
 	"GoBlog/pkg/view"
 	"fmt"
@@ -54,9 +55,11 @@ func (ac *ArticlesController) Index(w http.ResponseWriter, _ *http.Request) {
 // Store 创建文章页面
 func (ac *ArticlesController) Store(w http.ResponseWriter, r *http.Request) {
 	// 1. 初始化数据
+	currentUser := auth.User()
 	_article := article.Article{
-		Title: r.FormValue("title"),
-		Body:  r.PostFormValue("body"),
+		Title:  r.FormValue("title"),
+		Body:   r.PostFormValue("body"),
+		UserID: currentUser.ID,
 	}
 
 	// 2. 表单验证
