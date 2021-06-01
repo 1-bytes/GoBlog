@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"GoBlog/app/models/article"
+	"GoBlog/app/models/category"
 	"GoBlog/app/models/user"
 	"GoBlog/pkg/config"
 	"GoBlog/pkg/model"
@@ -31,5 +32,6 @@ func migration(db *gorm.DB) {
 	db.AutoMigrate(
 		&user.User{},
 		&article.Article{},
+		&category.Category{},
 	)
 }
