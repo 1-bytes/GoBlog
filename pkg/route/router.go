@@ -1,6 +1,8 @@
 package route
 
 import (
+	"GoBlog/pkg/config"
+	"GoBlog/pkg/logger"
 	"github.com/gorilla/mux"
 	"net/http"
 )
@@ -17,10 +19,10 @@ func SetRoute(r *mux.Router) {
 func Name2URL(routeName string, pairs ...string) string {
 	url, err := route.Get(routeName).URL(pairs...)
 	if err != nil {
-		//checkError(err)
+		logger.LogError(err)
 		return ""
 	}
-	return url.String()
+	return config.GetString("app.url") + url.String()
 }
 
 // GetRouteVariable 通过获取URL路由参数名称获取值.
