@@ -2,6 +2,7 @@ package article
 
 import (
 	"GoBlog/app/models"
+	"GoBlog/app/models/category"
 	"GoBlog/app/models/user"
 	"GoBlog/pkg/route"
 )
@@ -17,6 +18,7 @@ type Article struct {
 	// 因此必须包含在 Article 结构中，以便填充 User 的内部结构
 	User       user.User
 	CategoryID uint64 `gorm:"not null;default:1;index"`
+	Category   category.Category
 }
 
 // Link 方法用来生成文章链接

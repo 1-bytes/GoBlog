@@ -2,5 +2,6 @@
   <p class="blog-post-meta text-secondary">
     发布于：<a href="{{ .Link }}" class="font-weight-bold">{{ .CreateAtDate }}</a>&nbsp;
     作者：<a href="{{ .User.Link }}" class="font-weight-bold">{{ .User.Name }}</a>
+    分类：<a href="{{ .Category.Link }}">{{ .Category.Name }}</a>
   </p>
 {{ end }}
