@@ -31,7 +31,7 @@ func GetByUserID(uid string) ([]Article, error) {
 // GetAll 获取全部文章
 func GetAll(r *http.Request, perPage int) ([]Article, pagination.ViewData, error) {
 	// 1. 初始化分页实例
-	db := model.DB.Model(Article{}).Order("create_at desc")
+	db := model.DB.Model(Article{}).Order("created_at desc")
 	_pager := pagination.New(r, db, route.Name2URL("articles.index"), perPage)
 
 	// 2. 获取视图数据
@@ -70,4 +70,20 @@ func (article *Article) Delete() (rowsAffected int64, err error) {
 		return 0, err
 	}
 	return result.RowsAffected, nil
+}
+
+// GetByCategoryID 获取分类相关文章
+func GetByCategoryID(cid string, r *http.Request, perPage int) ([]Article, pagination.ViewData, error) {
+	// 1. 初始化分页实例
+	db := model.DB.Model(Article{}).Where("category_id = ?", cid).Order("created_at desc")
+	_pager := pagination.New(r, db, route.Name2URL("categories.show", "id", cid), perPage)
+
+	// 2. 获取视图数据
+	viewData := _pager.Paging()
+
+	// 3. 获取数据
+	var articles []Article
+	_pager.Results(&articles)
+
+	return articles, viewData, nil
 }

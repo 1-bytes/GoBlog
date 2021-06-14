@@ -15,7 +15,8 @@ type Article struct {
 	UserID uint64 `gorm:"not null;index"`
 	// 默认情况下 UserID 会隐式的作用于 Article 表和 User 表之间创建外键关系
 	// 因此必须包含在 Article 结构中，以便填充 User 的内部结构
-	User user.User
+	User       user.User
+	CategoryID uint64 `gorm:"not null;default:1;index"`
 }
 
 // Link 方法用来生成文章链接
